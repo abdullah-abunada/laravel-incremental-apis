@@ -15,6 +15,7 @@ class LesonsTransformer extends Transformer
     public function transform($lesson)
     {
         return [
+            'id' => $lesson['id'],
             'lesson_title' => $lesson['title'],
             'lesson_description' => $lesson['body'],
             'lesson_tags'=> array_map([$this,'tagTransform']

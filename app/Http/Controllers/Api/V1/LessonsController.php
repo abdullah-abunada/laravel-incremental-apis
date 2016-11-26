@@ -8,7 +8,7 @@ use App\transformer\LesonsTransformer;
 use Illuminate\Http\Request;
 
 use App\Http\Requests;
-use Illuminate\Validation\Validator;
+use Validator;
 
 class LessonsController extends ApiController
 {
@@ -74,6 +74,7 @@ class LessonsController extends ApiController
                 return $this->setStatusCode(201)->respond([
                     'message' => 'The lesson has been created successfully.',
                     'status_code' => 201,
+                    'data' => $this->respond($this->lessonTransformer->transform($lesson))
                 ]);
             }
         } catch (Exception $e) {

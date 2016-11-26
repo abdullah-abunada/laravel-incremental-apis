@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Lesson extends Model
 {
-    protected $fillable = ['lesson_title', 'lesson_body'];
+    protected $fillable = ['title', 'body'];
 
     public function tags(){
 
