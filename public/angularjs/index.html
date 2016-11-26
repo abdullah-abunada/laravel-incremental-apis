@@ -1,0 +1,206 @@
+<!doctype html>
+<html>
+<head>
+<title>AngularJS CRUD Operations with API's</title>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+<style type="text/css">
+/* required style*/ 
+.none{display: none;}
+
+/* optional styles */
+table tr th, table tr td{font-size: 1.2rem;}
+.row{ margin:20px 20px 20px 20px;width: 100%;}
+.glyphicon{font-size: 20px;}
+.glyphicon-plus{float: right;}
+a.glyphicon{text-decoration: none;cursor: pointer;}
+.glyphicon-trash{margin-left: 10px;}
+.alert{
+    width: 50%;
+    border-radius: 0;
+    margin-top: 10px;
+    margin-left: 10px;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
+<script>
+// define application
+angular.module("crudApp", [])
+.controller("lessonController", function($scope,$http){
+    $scope.lessons;
+    $scope.tempLessonData = {};
+    var token = 'Bearer {eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjEsImlzcyI6Imh0dHA6XC9cL3NhbmRib3guZGV2OjgwODBcL2FwaVwvcHVibGljXC9hcGlcL3YxXC9hdXRoZW50aWNhdGUiLCJpYXQiOjE0ODAxNjAwNjIsImV4cCI6MTQ4MDE2MzY2MiwibmJmIjoxNDgwMTYwMDYyLCJqdGkiOiI0ZTU4YzVjNGM3NWMyZmI2Y2QxNTY2NWRmNzc1ODkxZiJ9.zAXj7mEWxA8RkWlZt2XXysY3Oqk06QYZ1-u8KBjYzhk}';
+
+    // function to get records from the database
+    $scope.getRecords = function(){
+        $http.get('http://sandbox.dev:8080/api/public/api/v1/lessons', {
+             headers: {
+			   'Authorization': token
+			},
+            params:{
+                'limit':'10000'
+            }
+        }).success(function(response){
+            if(response.lessons.length > 0){
+                $scope.lessons = response.lessons;
+            }
+        });
+    };
+    
+    // function to add user data
+    $scope.addLesson = function(){
+        var data = {
+            'title':$scope.tempLessonData.title,
+            'body':$scope.tempLessonData.body
+        };
+        var config = {
+             headers: {
+			   'Authorization': token,
+			   'Content-Type' : 'application/json'
+			},
+        };
+
+        $http.post("http://sandbox.dev:8080/api/public/api/v1/lessons", data, config).success(function(response){
+           
+            $scope.lessons.push({
+                id:response.data.original.id,
+                lesson_title:response.data.original.lesson_title,
+                lesson_description:response.data.original.lesson_description,
+            });
+                   
+            $scope.lessonForm.$setPristine();
+            $scope.tempLessonData = {};
+            $('.formData').slideUp();
+            $scope.messageSuccess(response.message);
+            
+        });
+    };
+    
+    // function to edit user data
+    $scope.editLesson = function(lesson){
+        $scope.tempLessonData = {
+            id:lesson.id,
+            title:lesson.lesson_title,
+            body:lesson.lesson_description
+        };
+        $scope.index = $scope.lessons.indexOf(lesson);
+        $('.formData').slideDown();
+    };
+    
+    // function to update user data
+    $scope.updateLesson = function(){
+        
+    	var lesson_id = $scope.tempLessonData.id;
+        var data = {
+            'title':$scope.tempLessonData.title,
+            'body':$scope.tempLessonData.body
+        };
+        var config = {
+             headers: {
+			   'Authorization': token,
+			   'Content-Type' : 'application/json'
+			},
+        };
+        console.log(data);
+        $http.put("http://sandbox.dev:8080/api/public/api/v1/lessons/"+lesson_id, data, config).success(function(response){
+           
+                $scope.lessons[$scope.index].id = $scope.tempLessonData.id;
+                $scope.lessons[$scope.index].lesson_title = $scope.tempLessonData.title;
+                $scope.lessons[$scope.index].lesson_description = $scope.tempLessonData.body;
+
+                $scope.lessonForm.$setPristine();
+                $scope.tempLessonData = {};
+                $('.formData').slideUp();
+                $scope.messageSuccess(response.message);
+            
+        });
+    };
+    
+    // function to delete user data from the database
+    $scope.deleteLesson = function(lesson){
+        var conf = confirm('Are you sure to delete the lesson?');
+        if(conf === true){
+
+        	var lesson_id = lesson.id;
+        	var config = {
+            	headers: {
+			   		'Authorization': token,
+				},
+        	};
+
+            $http.delete("http://sandbox.dev:8080/api/public/api/v1/lessons/"+lesson_id,config).success(function(response){
+                
+                var index = $scope.lessons.indexOf(lesson);
+                $scope.lessons.splice(index,1);
+                $scope.messageSuccess(response.message);
+                
+            });
+        }
+    };
+    
+    // function to display success message
+    $scope.messageSuccess = function(msg){
+        $('.alert-success > p').html(msg);
+        $('.alert-success').show();
+        $('.alert-success').delay(5000).slideUp(function(){
+            $('.alert-success > p').html('');
+        });
+    };
+    
+    // function to display error message
+    $scope.messageError = function(msg){
+        $('.alert-danger > p').html(msg);
+        $('.alert-danger').show();
+        $('.alert-danger').delay(5000).slideUp(function(){
+            $('.alert-danger > p').html('');
+        });
+    };
+});
+</script>
+</head>
+<body ng-app="crudApp">
+<div class="container" ng-controller="lessonController" ng-init="getRecords()">
+    <div class="row">
+    	<h2>AngularJS CRUD Operations with API's</h2>
+        <div class="panel panel-default users-content">
+            <div class="panel-heading">Lessons <a href="javascript:void(0);" class="glyphicon glyphicon-plus" onClick="$('.formData').slideToggle();"></a></div>
+            <div class="alert alert-danger none"><p></p></div>
+            <div class="alert alert-success none"><p></p></div>
+            <div class="panel-body none formData">
+                <form class="form" name="lessonForm">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" class="form-control" name="title" ng-model="tempLessonData.title"/>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" class="form-control" name="body" ng-model="tempLessonData.body"/>
+                    </div>
+                    <a href="javascript:void(0);" class="btn btn-warning" onClick="$('.formData').slideUp();">Cancel</a>
+                    <a href="javascript:void(0);" class="btn btn-success" ng-hide="tempLessonData.id" ng-click="addLesson()">Add Lesson</a>
+                    <a href="javascript:void(0);" class="btn btn-success" ng-hide="!tempLessonData.id" ng-click="updateLesson()">Update Lesson</a>
+                </form>
+            </div>
+            <table class="table table-striped">
+                <tr>
+                    <th width="5%">#</th>
+                    <th width="20%">Title</th>
+                    <th width="30%">Description</th>
+                    <th width="10%"></th>
+                </tr>
+                <tr ng-repeat="lesson in lessons | orderBy:'-lesson_title'">
+                    <td>{{$index + 1}}</td>
+                    <td>{{lesson.lesson_title}}</td>
+                    <td>{{lesson.lesson_description}}</td>
+                    <td>
+                        <a href="javascript:void(0);" class="glyphicon glyphicon-edit" ng-click="editLesson(lesson)"></a>
+                        <a href="javascript:void(0);" class="glyphicon glyphicon-trash" ng-click="deleteLesson(lesson)"></a>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
